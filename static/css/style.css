@@ -47,10 +47,7 @@ h6 {
     overflow: hidden;
 }
 
-.card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-}
+/* .card:hover removed to prevent blinking layout shifts */
 
 .card-title {
     font-weight: 600;

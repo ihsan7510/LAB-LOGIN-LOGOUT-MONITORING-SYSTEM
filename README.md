@@ -9,11 +9,11 @@ The **Lab Login Logout Monitoring System** (formerly NX-PRINT v2.0) is a compreh
 - **Real-time Dashboard**: Live monitoring of students currently present in the lab.
 - **Admin Panel**:
   - **Student Management**: Add, modify, delete students, and register fingerprints directly from the UI.
-  - **Timetable Management**: flexible scheduling with semester-wise filtering.
+  - **Timetable Management**: Flexible scheduling with semester-wise filtering. Includes full **Edit** and **Delete** capabilities.
   - **Analytics**: Visual graphs for daily attendance trends and semester-wise distribution.
   - **Data Controls**: "Reset All Data" functionality for system refreshes.
 - **Reporting**: Export detailed attendance logs to Excel/CSV.
-- **Hardware feedback**: LCD display messaging and real-time status updates.
+- **Hardware Feedback**: LCD display messaging and real-time status updates (including on-screen fingerprint animations).
 
 ## Tech Stack
 - **Backend**: Python (Flask), SQLAlchemy (SQLite)
@@ -78,7 +78,7 @@ graph TD
 ```
 
 1.  Connect the **AS608 Fingerprint Sensor** and **LCD Display** to your Arduino board as shown in the diagram.
-    - **AS608**: Connect VCC->5V, GND->GND, TX->Arduino RX, RX->Arduino TX.
+    - **AS608**: Connect VCC->5V, GND->GND, TX->Arduino Pin 2 (RX), RX->Arduino Pin 3 (TX).
     - **LCD**: Connect VCC->5V, GND->GND, SDA->Arduino SDA, SCL->Arduino SCL.
 2.  Open the Arduino IDE and upload the sketch found in `arduino/fingerprint_scanner/`.
 3.  Note the **COM Port** your Arduino is connected to (e.g., `COM3`, `COM8`, `/dev/ttyUSB0`).
@@ -90,7 +90,7 @@ graph TD
 ### 3. Installation Steps
 1.  **Clone the repository**:
     ```bash
-    git clone https://github.com/yourusername/lab-monitoring-system.git
+    git clone https://github.com/ihsan7510/lab-monitoring-system.git
     cd lab-monitoring-system
     ```
 
@@ -145,8 +145,9 @@ python serial_bridge.py
 1.  Open your web browser and go to `http://127.0.0.1:5000`.
 2.  Log in with the admin credentials created in the setup step.
 3.  **Register Students**: Go to the "Student Management" section to add students and enroll their fingerprints.
-4.  **Set Timetable**: Configure the class schedule in the "Timetable" section.
+4.  **Set Timetable**: Configure the class schedule in the "Timetable" section. You can now **Edit** or **Remove** entries directly from the table.
 5.  **Monitor**: View live attendance on the main dashboard.
+6.  **Analytics**: Check the new "Graph View" for attendance trends.
 
 ## API Endpoints
 The system exposes several internal APIs used by the serial bridge:

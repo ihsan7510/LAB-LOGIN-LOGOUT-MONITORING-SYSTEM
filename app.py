@@ -371,6 +371,38 @@ def timetable():
         
     return render_template('timetable.html', entries=entries, current_semester=semester_filter)
 
+@app.route('/delete_timetable/<int:id>', methods=['POST'])
+@login_required
+def delete_timetable(id):
+    entry = Timetable.query.get_or_404(id)
+    try:
+        db.session.delete(entry)
+        db.session.commit()
+    except Exception as e:
+        return f"Error deleting timetable entry: {e}"
+    return redirect(url_for('timetable'))
+
+@app.route('/edit_timetable/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_timetable(id):
+    entry = Timetable.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        entry.day = request.form.get('day')
+        entry.start_time = request.form.get('start_time')
+        entry.end_time = request.form.get('end_time')
+        entry.subject = request.form.get('subject')
+        entry.lab_name = request.form.get('lab_name')
+        entry.semester = request.form.get('semester')
+        
+        try:
+            db.session.commit()
+            return redirect(url_for('timetable'))
+        except Exception as e:
+            return f"Error updating timetable entry: {e}"
+            
+    return render_template('edit_timetable.html', entry=entry)
+
 @app.route('/api/start_registration')
 def start_registration():
     global registration_status

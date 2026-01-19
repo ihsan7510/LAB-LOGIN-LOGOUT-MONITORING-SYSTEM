@@ -127,7 +127,14 @@
                     </div>
                     <h3 class="card-title">Scanner Status</h3>
                     {% if is_device_connected %}
-                    <h4 class="text-success fw-bold" id="admin-lcd-status">Online</h4>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <h4 class="text-success fw-bold mb-0" id="admin-lcd-status">Online</h4>
+                        <div class="fingerprint-wrapper" id="admin-fingerprint-anim">
+                            <i class="bi bi-fingerprint fingerprint-icon fingerprint-neutral"></i>
+                            <i class="bi bi-x-circle-fill error-badge"></i>
+                            <i class="bi bi-check-circle-fill success-badge"></i>
+                        </div>
+                    </div>
                     {% else %}
                     <h4 class="text-danger fw-bold" id="admin-lcd-status">NX-PRINT v2.0 is offline</h4>
                     {% endif %}
@@ -212,8 +219,30 @@
             .then(response => response.json())
             .then(data => {
                 const statusEl = document.getElementById('admin-lcd-status');
+                const animWrapper = document.getElementById('admin-fingerprint-anim');
+                const icon = animWrapper ? animWrapper.querySelector('.fingerprint-icon') : null;
+
                 if (statusEl && statusEl.classList.contains('text-success')) {
                     statusEl.innerText = data.message || "Online";
+
+                    // Animation Logic
+                    if (icon) {
+                        const msg = (data.message || "").toLowerCase();
+
+                        // Reset classes
+                        icon.classList.remove('fingerprint-error', 'fingerprint-success', 'fingerprint-neutral');
+                        animWrapper.classList.remove('fingerprint-error', 'fingerprint-success');
+
+                        if (msg.includes('not found') || msg.includes('error') || msg.includes('fail')) {
+                            icon.classList.add('fingerprint-error');
+                            animWrapper.classList.add('fingerprint-error');
+                        } else if (msg.includes('welcome') || msg.includes('login') || msg.includes('logout') || msg.includes('success')) {
+                            icon.classList.add('fingerprint-success');
+                            animWrapper.classList.add('fingerprint-success');
+                        } else {
+                            icon.classList.add('fingerprint-neutral');
+                        }
+                    }
                 }
             })
             .catch(err => console.error("LCD Poll Error:", err));

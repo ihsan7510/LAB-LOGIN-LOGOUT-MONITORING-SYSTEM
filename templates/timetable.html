@@ -83,6 +83,7 @@
                             <th>End</th>
                             <th>Subject</th>
                             <th>Lab</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -94,11 +95,16 @@
                             <td>{{ entry.end_time }}</td>
                             <td>{{ entry.subject }}</td>
                             <td>{{ entry.lab_name }}</td>
+                            <td>
+                                <a href="{{ url_for('edit_timetable', id=entry.id) }}"
+                                    class="btn btn-sm btn-primary">Edit</a>
+                                <form action="{{ url_for('delete_timetable', id=entry.id) }}" method="POST"
+                                    class="d-inline" onsubmit="return confirm('Are you sure?')">
+                                    <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                </form>
+                            </td>
                         </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center">No classes scheduled.</td>
-                        </tr>
+
                         {% endfor %}
                     </tbody>
                 </table>
@@ -106,4 +112,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

@@ -6,7 +6,7 @@ import json
 # SERIAL CONFIGURATION
 # IMPORTANT: Change 'COM3' to your Arduino's port (e.g., 'COM3' on Windows, '/dev/ttyUSB0' on Linux)
 # IMPORTANT: Change 'COM3' to your Arduino's port
-SERIAL_PORT = 'COM8' 
+SERIAL_PORT = 'COM11' 
 BAUD_RATE = 115200
 API_URL = "http://127.0.0.1:5000/api/scan"
 CMD_URL = "http://127.0.0.1:5000/api/get_command"

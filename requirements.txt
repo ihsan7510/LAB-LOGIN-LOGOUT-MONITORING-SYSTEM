@@ -2,3 +2,6 @@ flask
 flask-sqlalchemy
 pyserial
 requests
+flask-login
+pandas
+openpyxl
