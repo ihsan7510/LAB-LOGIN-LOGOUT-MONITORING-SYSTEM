@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if is_device_connected %}NX-PRINT v2.0{% else %}LAB LOGIN LOGOUT MONITORING SYSTEM{% endif %} - Lab
+        Attendance</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        /* Global Fade In */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('public_dashboard') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                    class="bi bi-fingerprint me-2" viewBox="0 0 16 16">
+                    <path
+                        d="M8.06 6.5a.5.5 0 0 1 .5.5v.776a11.5 11.5 0 0 1-.552 3.519.5.5 0 0 1-.96-.29A10.5 10.5 0 0 0 7.56 7.5V7a.5.5 0 0 1 .5-.5ZM6.5 6.506a.5.5 0 0 1 .5.5v.965c0 1.33.665 2.55 1.785 3.28.266.17.34.507.158.766-.183.277-.552.336-.838.153A5.4 5.4 0 0 1 5.5 7.971V7a.5.5 0 0 1 1-.494Z" />
+                    <path
+                        d="M10.875 5.5a.5.5 0 0 1 .5-.5 3.5 3.5 0 1 1-7 .002.5.5 0 1 1-1 0 3.5 3.5 0 0 1 7-.002ZM7.75 3.5a.5.5 0 0 1 .5-.5 1 1 0 1 1-2 0 .5.5 0 0 1 1.5.5ZM14.996 9.873a.5.5 0 0 0-.752.413 7.99 7.99 0 0 1-.502 2.228.5.5 0 1 0 .937.345 9.07 9.07 0 0 0 .57-2.522.5.5 0 0 0-.253-.464Z" />
+                    <path
+                        d="M12.75 6.5a.5.5 0 0 1 .5.5v.195a9 9 0 0 1-.097 2.052.5.5 0 1 1-.986-.164A7.95 7.95 0 0 0 12.25 7.195V7a.5.5 0 0 1 .5-.5Z" />
+                </svg>
+                {% if is_device_connected %}
+                <span class="text-primary fw-bold">NX-PRINT v2.0</span>
+                {% else %}
+                <span class="text-dark fw-bold">LAB LOGIN LOGOUT MONITORING SYSTEM</span>
+                {% endif %}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        {% if current_user.is_authenticated %}
+                        <a class="nav-link text-danger" href="{{ url_for('logout') }}"><i
+                                class="bi bi-box-arrow-right"></i> Logout</a>
+                        {% else %}
+                        <a class="nav-link" href="{{ url_for('login') }}">Admin Login</a>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay"
+        class="d-none position-fixed top-0 start-0 w-100 h-100 bg-white bg-opacity-75 d-flex justify-content-center align-items-center"
+        style="z-index: 1050;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h4 class="mt-3 text-primary" id="loadingText">Processing...</h4>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function showLoading(text) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (text) document.getElementById('loadingText').innerText = text;
+            overlay.classList.remove('d-none');
+            // Force reflow/fadeIn if needed, but the overlay is just toggled here for simplicity
+        }
+
+        // Attach listener to ALL internal links
+        document.addEventListener('DOMContentLoaded', function () {
+            const links = document.querySelectorAll('a');
+
+            links.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    const href = this.getAttribute('href');
+                    const target = this.getAttribute('target');
+
+                    // Filter: Internal links only, not empty, not hash, not new tab
+                    if (href && href.startsWith('/') && href !== '#' && target !== '_blank') {
+                        e.preventDefault();
+
+                        // Custom text (optional)
+                        let loadingText = "Loading...";
+                        if (href.includes('logout')) loadingText = "Redirecting...";
+                        else if (href.includes('login')) loadingText = "Accessing...";
+
+                        showLoading(loadingText);
+
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 500); // 500ms delay for visual feedback
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

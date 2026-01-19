@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Premium Header Section -->
+<div class="dashboard-header mb-5">
+    <div class="container position-relative" style="z-index: 2;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <a href="{{ url_for('landing_page') }}" class="btn btn-outline-light btn-sm backdrop-blur">
+                <i class="bi bi-arrow-left me-1"></i> Home
+            </a>
+            <span class="badge bg-white text-primary shadow-sm px-3 py-2">Logged in as Admin</span>
+        </div>
+        <div class="text-center pb-5">
+            <h1 class="display-5 fw-bold text-white mb-2">Admin Control Panel</h1>
+            <p class="lead text-white-50">Manage students, timetables, and system status</p>
+        </div>
+    </div>
+</div>
+
+<div class="container dashboard-content" style="margin-top: -5rem;">
+    <div class="row justify-content-center">
+        <!-- Student Management -->
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('students') }}" class="text-decoration-none">
+                <div class="card h-100 text-center p-4 shadow-lg border-0 hover-lift">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <span
+                                class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle"
+                                style="width: 80px; height: 80px;">
+                                <i class="bi bi-people-fill fs-1"></i>
+                            </span>
+                        </div>
+                        <h3 class="card-title text-dark">Manage Students</h3>
+                        <p class="card-text text-muted">Register fingerprints and manage student details.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Timetable Management -->
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('timetable') }}" class="text-decoration-none">
+                <div class="card h-100 text-center p-4 shadow-lg border-0 hover-lift">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <span
+                                class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle"
+                                style="width: 80px; height: 80px;">
+                                <i class="bi bi-calendar-event-fill fs-1"></i>
+                            </span>
+                        </div>
+                        <h3 class="card-title text-dark">Manage Timetable</h3>
+                        <p class="card-text text-muted">Set up class schedules and times.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Attendance Logs -->
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('public_dashboard') }}" class="text-decoration-none">
+                <div class="card h-100 text-center p-4 shadow-lg border-0 hover-lift">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <span
+                                class="d-inline-flex align-items-center justify-content-center bg-secondary bg-opacity-10 text-secondary rounded-circle"
+                                style="width: 80px; height: 80px;">
+                                <i class="bi bi-bar-chart-fill fs-1"></i>
+                            </span>
+                        </div>
+                        <h3 class="card-title text-dark">View Attendance</h3>
+                        <p class="card-text text-muted">See real-time logs and history.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Analytics Graph -->
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('analytics') }}" class="text-decoration-none">
+                <div class="card h-100 text-center p-4 shadow-lg border-0 hover-lift">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <span
+                                class="d-inline-flex align-items-center justify-content-center bg-info bg-opacity-10 text-info rounded-circle"
+                                style="width: 80px; height: 80px;">
+                                <i class="bi bi-graph-up-arrow fs-1"></i>
+                            </span>
+                        </div>
+                        <h3 class="card-title text-dark">Graph View</h3>
+                        <p class="card-text text-muted">Visualize weekly attendance trends.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Download Sheet -->
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('download_excel') }}" class="text-decoration-none">
+                <div class="card h-100 text-center p-4 shadow-lg border-0 hover-lift">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <span
+                                class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle"
+                                style="width: 80px; height: 80px; color: var(--primary-dark)!important;">
+                                <i class="bi bi-file-earmark-excel-fill fs-1"></i>
+                            </span>
+                        </div>
+                        <h3 class="card-title text-dark">Download Report</h3>
+                        <p class="card-text text-muted">Export attendance data to Excel.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Scanner Status -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center p-4 shadow-lg border-0">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <span
+                            class="d-inline-flex align-items-center justify-content-center bg-secondary bg-opacity-10 text-secondary rounded-circle"
+                            style="width: 80px; height: 80px;">
+                            <i class="bi bi-cpu-fill fs-1"></i>
+                        </span>
+                    </div>
+                    <h3 class="card-title">Scanner Status</h3>
+                    {% if is_device_connected %}
+                    <h4 class="text-success fw-bold" id="admin-lcd-status">Online</h4>
+                    {% else %}
+                    <h4 class="text-danger fw-bold" id="admin-lcd-status">NX-PRINT v2.0 is offline</h4>
+                    {% endif %}
+                    <p class="card-text text-muted">Real-time status of the device.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center p-4 shadow-lg border-0 hover-lift bg-danger bg-opacity-10">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <span
+                            class="d-inline-flex align-items-center justify-content-center bg-danger text-white rounded-circle"
+                            style="width: 80px; height: 80px;">
+                            <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+                        </span>
+                    </div>
+                    <h3 class="card-title text-danger">Danger Zone</h3>
+                    <p class="card-text text-danger">Reset all data and fingerprints.</p>
+                    <button class="btn btn-danger w-100 mt-2" onclick="confirmReset()">Reset All Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Confirmation Modal -->
+<div class="modal fade" id="resetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm System Reset</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-bold">Are you absolutely sure?</p>
+                <p>This action will perform the following:</p>
+                <ul class="text-danger">
+                    <li>Permanently delete ALL Student records</li>
+                    <li>Permanently delete ALL Attendance logs</li>
+                    <li>Permanently delete ALL Timetable entries</li>
+                    <li>Wipe ALL Fingerprint Templates from the scanner</li>
+                </ul>
+                <p class="text-muted">This action CANNOT be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="executeReset()">Yes, Delete Everything</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, .15) !important;
+    }
+
+    .backdrop-blur {
+        backdrop-filter: blur(5px);
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .backdrop-blur:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+</style>
+
+<script>
+    // Poll for LCD status
+    setInterval(() => {
+        fetch('/api/lcd_status')
+            .then(response => response.json())
+            .then(data => {
+                const statusEl = document.getElementById('admin-lcd-status');
+                if (statusEl && statusEl.classList.contains('text-success')) {
+                    statusEl.innerText = data.message || "Online";
+                }
+            })
+            .catch(err => console.error("LCD Poll Error:", err));
+    }, 1000);
+
+    function confirmReset() {
+        var resetModal = new bootstrap.Modal(document.getElementById('resetModal'));
+        resetModal.show();
+    }
+
+    function executeReset() {
+        fetch('/api/reset_system_data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while resetting the system.');
+            });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary mb-3">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+        <h2 class="fw-bold text-dark">Attendance Analytics</h2>
+        <p class="text-muted">Overview of attendance trends for the last 7 days.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Daily Activity Line Chart -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body p-4">
+                <h5 class="card-title fw-bold mb-4">Daily Attendance Activity</h5>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Semester Distribution Doughnut Chart -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body p-4">
+                <h5 class="card-title fw-bold mb-4">By Semester</h5>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="semesterChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Daily Activity Chart (Bar)
+        const ctxDaily = document.getElementById('attendanceChart').getContext('2d');
+        fetch('/api/daily_stats')
+            .then(response => response.json())
+            .then(data => {
+                new Chart(ctxDaily, {
+                    type: 'bar',
+                    data: {
+                        labels: data.dates,
+                        datasets: [{
+                            label: 'Total Scans',
+                            data: data.counts,
+                            backgroundColor: 'rgba(67, 97, 238, 0.6)',
+                            borderColor: 'rgba(67, 97, 238, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            barPercentage: 0.6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { precision: 0 } },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            })
+            .catch(error => console.error('Error fetching daily stats:', error));
+
+        // 2. Semester Distribution Chart (Doughnut)
+        const ctxSem = document.getElementById('semesterChart').getContext('2d');
+        fetch('/api/semester_stats')
+            .then(response => response.json())
+            .then(data => {
+                new Chart(ctxSem, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.data,
+                            backgroundColor: [
+                                '#4361ee', // Primary
+                                '#4cc9f0', // Secondary
+                                '#3a0ca3', // Primary Dark
+                                '#f72585', // Accent
+                                '#7209b7'  // Purple
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Inter' } } }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error fetching semester stats:', error));
+    });
+</script>
+{% endblock %}
