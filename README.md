@@ -40,7 +40,46 @@ The **Lab Login Logout Monitoring System** (formerly NX-PRINT v2.0) is a compreh
 ## Setup & Installation
 
 ### 1. Hardware Setup
-1.  Connect the **AS608 Fingerprint Sensor** and **LCD Display** to your Arduino board.
+
+#### Circuit Diagram
+```mermaid
+graph TD
+    subgraph Arduino
+        5V[5V]
+        GND[GND]
+        RX[RX (SoftSerial)]
+        TX[TX (SoftSerial)]
+        SDA[SDA ]
+        SCL[SCL]
+    end
+
+    subgraph AS608_Fingerprint_Sensor
+        AS_VCC[VCC]
+        AS_GND[GND]
+        AS_TX[TX]
+        AS_RX[RX]
+    end
+
+    subgraph I2C_LCD_Display
+        LCD_VCC[VCC]
+        LCD_GND[GND]
+        LCD_SDA[SDA]
+        LCD_SCL[SCL]
+    end
+
+    5V --> AS_VCC
+    5V --> LCD_VCC
+    GND --> AS_GND
+    GND --> LCD_GND
+    TX --> AS_RX
+    RX --> AS_TX
+    SDA --> LCD_SDA
+    SCL --> LCD_SCL
+```
+
+1.  Connect the **AS608 Fingerprint Sensor** and **LCD Display** to your Arduino board as shown in the diagram.
+    - **AS608**: Connect VCC->5V, GND->GND, TX->Arduino RX, RX->Arduino TX.
+    - **LCD**: Connect VCC->5V, GND->GND, SDA->Arduino SDA, SCL->Arduino SCL.
 2.  Open the Arduino IDE and upload the sketch found in `arduino/fingerprint_scanner/`.
 3.  Note the **COM Port** your Arduino is connected to (e.g., `COM3`, `COM8`, `/dev/ttyUSB0`).
 
