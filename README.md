@@ -47,9 +47,9 @@ graph TD
     subgraph Arduino
         5V[5V]
         GND[GND]
-        RX[RX (SoftSerial)]
-        TX[TX (SoftSerial)]
-        SDA[SDA ]
+        RX["RX (SoftSerial)"]
+        TX["TX (SoftSerial)"]
+        SDA[SDA]
         SCL[SCL]
     end
 
