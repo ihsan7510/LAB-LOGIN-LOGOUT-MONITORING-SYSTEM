@@ -33,13 +33,14 @@ def load_user(user_id):
 # Global State for Registration/Commands
 command_queue = []
 registration_status = {'status': 'idle', 'message': '', 'fingerprint_id': None}
+manual_class_status = {'active': False, 'subject': None, 'semester': 'All'} # Global Manual Override
 lcd_message = "Initializing..."
 last_heartbeat_time = 0
 
 @app.context_processor
 def inject_device_status():
     is_connected = (time.time() - last_heartbeat_time) < 5
-    return dict(is_device_connected=is_connected)
+    return dict(is_device_connected=is_connected, manual_class=manual_class_status)
 
 @app.route('/api/heartbeat', methods=['POST'])
 def heartbeat():
@@ -49,6 +50,21 @@ def heartbeat():
 
 def get_current_class(student_semester):
     """Checks the timetable for a class currently running for a specific semester."""
+    
+    # 1. Check Manual Override First
+    if manual_class_status['active']:
+        # If manual class is for ALL or matches specific semester
+        if manual_class_status['semester'] == 'All' or manual_class_status['semester'] == str(student_semester):
+            print(f"DEBUG: Using Manual Class: {manual_class_status['subject']}")
+            # Create a dummy object behaving like Timetable row
+            return type('ManualClass', (object,), {
+                'subject': manual_class_status['subject'],
+                'start_time': 'Manual',
+                'end_time': 'Manual',
+                'lab_name': 'Manual Override',
+                'semester': manual_class_status['semester']
+            })
+    
     now = datetime.now()
     current_day = calendar.day_name[now.weekday()] # e.g., "Monday"
     current_time = now.strftime("%H:%M") # e.g., "09:30"
@@ -169,6 +185,20 @@ def landing_page():
 def admin_dashboard():
     return render_template('admin_dashboard.html')
 
+def get_all_current_classes():
+    """Returns a list of all classes currently running across all semesters."""
+    now = datetime.now()
+    current_day = calendar.day_name[now.weekday()] # e.g., "Monday"
+    current_time = now.strftime("%H:%M") # e.g., "09:30"
+    
+    classes = Timetable.query.filter(
+        Timetable.day == current_day,
+        Timetable.start_time <= current_time,
+        Timetable.end_time >= current_time
+    ).all()
+    
+    return classes
+
 @app.route('/dashboard')
 def public_dashboard():
     # ... (Rest of dashboard logic)
@@ -212,8 +242,9 @@ def public_dashboard():
         last_id = latest_global.id if latest_global else 0
 
     active_count = get_active_student_count()
+    current_classes = get_all_current_classes()
     
-    return render_template('dashboard.html', logs=recent_logs, active_count=active_count, last_id=last_id)
+    return render_template('dashboard.html', logs=recent_logs, active_count=active_count, last_id=last_id, current_classes=current_classes)
 
 @app.route('/analytics')
 @login_required
@@ -451,6 +482,41 @@ def lcd_status():
         return jsonify({'status': 'updated'})
     return jsonify({'message': lcd_message})
 
+# Global State
+manual_session = {
+    'active': False,
+    'subject': None,
+    'semester': None,
+    'lab_name': 'Manual Mode'
+}
+
+@app.context_processor
+def inject_manual_status():
+    return dict(manual_session=manual_session)
+
+@app.route('/api/set_manual_session', methods=['POST'])
+@login_required
+def set_manual_session():
+    global manual_session
+    data = request.json
+    
+    manual_session['active'] = True
+    manual_session['subject'] = data.get('subject')
+    manual_session['semester'] = data.get('semester')
+    manual_session['lab_name'] = data.get('lab_name', 'Manual Mode')
+    
+    return jsonify({'status': 'success', 'session': manual_session})
+
+@app.route('/api/stop_manual_session', methods=['POST'])
+@login_required
+def stop_manual_session():
+    global manual_session
+    manual_session['active'] = False
+    manual_session['subject'] = None
+    manual_session['semester'] = None
+    
+    return jsonify({'status': 'success'})
+
 @app.route('/api/scan', methods=['POST'])
 def api_scan():
     data = request.json
@@ -464,44 +530,102 @@ def api_scan():
     if not student:
         return jsonify({'status': 'error', 'message': 'Student not found', 'student_name': 'Unknown'}), 200
         
-    # 2. Check for Current Class FOR THIS STUDENT'S SEMESTER
-    current_class = get_current_class(student.semester)
-    if not current_class:
-        return jsonify({
-            'status': 'error', 
-            'message': 'No Class',
-            'student_name': student.name
-        }), 200
+    # Get the latest log for this student (regardless of subject) to determine current state
+    last_global_log = Attendance.query.filter_by(student_id=student.id).order_by(Attendance.timestamp.desc()).first()
+    
+    # Determine the class running RIGHT NOW (Check Manual First)
+    current_class = None
+    
+    if manual_session['active'] and manual_session['semester'] == student.semester:
+        # Create a mock class object or dict
+        class MockClass:
+            def __init__(self, subject, lab_name, semester):
+                self.subject = subject
+                self.lab_name = lab_name
+                self.semester = semester
+                
+        current_class = MockClass(
+            subject=manual_session['subject'],
+            lab_name=manual_session['lab_name'],
+            semester=manual_session['semester']
+        )
+    else:
+        current_class = get_current_class(student.semester)
+    
+    # LOGIC MATRIX:
+    # 1. Last state was LOGIN (Student is inside a class)
+    #    - If Current Class is SAME as Last Log Subject -> LOGOUT (End session)
+    #    - If Current Class is DIFFERENT (New Subject) -> LOGOUT Old Subject, LOGIN New Subject (Switch)
+    #    - If NO Current Class (Break/End) -> LOGOUT Old Subject (End session)
+    
+    # 2. Last state was LOGOUT (Student is free)
+    #    - If Current Class exists -> LOGIN New Subject
+    #    - If NO Current Class -> REJECT (No class running)
+    
+    if last_global_log and last_global_log.status == 'LOGIN':
+        # Student is currently "IN" a class
+        
+        if current_class:
+            if current_class.subject == last_global_log.subject:
+                # Same class, just leaving
+                new_status = 'LOGOUT'
+                subject = current_class.subject
+                message = f'Logged Out: {subject}'
+                db.session.add(Attendance(student_id=student.id, status=new_status, subject=subject))
+                
+            else:
+                # Different class started! (Class change took place while student was inside)
+                # 1. Auto-Logout previous
+                db.session.add(Attendance(student_id=student.id, status='LOGOUT', subject=last_global_log.subject))
+                
+                # 2. Login new
+                new_status = 'LOGIN'
+                subject = current_class.subject
+                message = f'Switched: {last_global_log.subject} -> {subject}'
+                db.session.add(Attendance(student_id=student.id, status=new_status, subject=subject))
+                
+        else:
+            # Class ended, now it's break time, but student forgot to scan out
+            # Auto-logout them now
+            new_status = 'LOGOUT'
+            subject = last_global_log.subject
+            message = f'Logged Out (Break): {subject}'
+            db.session.add(Attendance(student_id=student.id, status=new_status, subject=subject))
+            
+    else:
+        # Student is currently "OUT"
+        if current_class:
+            new_status = 'LOGIN'
+            subject = current_class.subject
+            message = f'Logged In: {subject}'
+            db.session.add(Attendance(student_id=student.id, status=new_status, subject=subject))
+        else:
+            return jsonify({
+                'status': 'error', 
+                'message': 'No Class Running',
+                'student_name': student.name
+            }), 200
 
-    # 3. Determine Login/Logout
-    # Get last log for this student for THIS subject today
-    start_of_day = datetime.combine(date.today(), datetime.min.time())
-    
-    last_log = Attendance.query.filter(
-        Attendance.student_id == student.id,
-        Attendance.subject == current_class.subject,
-        Attendance.timestamp >= start_of_day
-    ).order_by(Attendance.timestamp.desc()).first()
-    
-    new_status = 'LOGIN'
-    if last_log and last_log.status == 'LOGIN':
-        new_status = 'LOGOUT'
-    
-    # 4. Log Attendance
-    log = Attendance(
-        student_id=student.id, 
-        status=new_status, 
-        subject=current_class.subject
-    )
-    db.session.add(log)
     db.session.commit()
+    # Determine what check-type happened for the final response (Login or Logout)
+    # If we switched (Logout+Login), the primary action communicated is the LOGIN to the new class
+    # but the logs show both.
     
+    scan_type_resp = 'LOGIN' if current_class and (not last_global_log or last_global_log.status == 'LOGOUT' or (last_global_log.status=='LOGIN' and last_global_log.subject != current_class.subject)) else 'LOGOUT'
+    
+    # If we just logged out during break
+    if not current_class:
+        scan_type_resp = 'LOGOUT'
+        subject_resp = last_global_log.subject if last_global_log else "Unknown"
+    else:
+        subject_resp = current_class.subject
+
     return jsonify({
         'status': 'success', 
-        'message': f'{new_status} Success', 
+        'message': message, 
         'student_name': student.name,
-        'subject': current_class.subject,
-        'scan_type': new_status  # LOGIN or LOGOUT
+        'subject': subject_resp,
+        'scan_type': scan_type_resp
     })
 
 @app.route('/api/reset_system_data', methods=['POST'])

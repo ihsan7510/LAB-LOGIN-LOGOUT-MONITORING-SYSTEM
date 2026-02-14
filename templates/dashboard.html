@@ -42,6 +42,66 @@
                     {% endif %}
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="card p-3 mb-3">
+                    <h5 class="text-muted">Current Class</h5>
+                    {% if manual_session.active and manual_session.semester %}
+                    <div class="alert alert-warning p-2 mb-2">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Manual Override
+                    </div>
+                    <div class="mb-1 border-bottom pb-1">
+                        <h6 class="fw-bold text-primary mb-0" style="font-size: 1rem;">{{ manual_session.subject }}</h6>
+                        <small class="text-muted" style="font-size: 0.8rem;">Sem {{ manual_session.semester }} | {{
+                            manual_session.lab_name }}</small>
+                    </div>
+                    {% elif current_classes %}
+                    <div style="max-height: 80px; overflow-y: auto;">
+                        {% for cls in current_classes %}
+                        <div class="mb-1 border-bottom pb-1">
+                            <h6 class="fw-bold text-primary mb-0" style="font-size: 1rem;">{{ cls.subject }}</h6>
+                            <small class="text-muted" style="font-size: 0.8rem;">Sem {{ cls.semester }} | {{
+                                cls.lab_name }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <h4 class="fw-bold text-muted">No Active Class</h4>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <div class="col-md-3">
+                <div class="card p-3 mb-3 border-warning">
+                    <h5 class="text-muted mb-2">Manual Class</h5>
+                    {% if manual_session.active %}
+                    <div class="d-grid">
+                        <button onclick="stopManualSession()" class="btn btn-danger btn-sm">End Manual Session</button>
+                    </div>
+                    {% else %}
+                    <form id="manualSessionForm" onsubmit="startManualSession(event)">
+                        <div class="input-group input-group-sm mb-2">
+                            <input type="text" class="form-control" id="manualSubject" placeholder="Subject" required>
+                        </div>
+                        <div class="input-group input-group-sm mb-2">
+                            <select class="form-select" id="manualSemester" required>
+                                <option value="" disabled selected>Sem</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                            </select>
+                            <button class="btn btn-warning" type="submit">Set</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
 
         </div>
     </div>
@@ -115,7 +175,6 @@
         </div>
     </div>
 </div>
-</div>
 
 <script>
     let currentLastId = {{ last_id|default (0) }};
@@ -167,5 +226,38 @@
             })
             .catch(err => console.error("LCD Poll Error:", err));
     }, 50);
+    // 3. Manual Session Controls
+    function startManualSession(event) {
+        event.preventDefault();
+        const subject = document.getElementById('manualSubject').value;
+        const semester = document.getElementById('manualSemester').value;
+
+        if (!subject || !semester) return;
+
+        fetch('/api/set_manual_session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subject: subject,
+                semester: semester,
+                lab_name: 'Manual Override'
+            })
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.reload();
+                }
+            });
+    }
+
+    function stopManualSession() {
+        fetch('/api/stop_manual_session', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.reload();
+                }
+            });
+    }
 </script>
 {% endblock %}
